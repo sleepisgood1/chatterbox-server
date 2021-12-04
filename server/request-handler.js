@@ -20,7 +20,7 @@ var defaultCorsHeaders = {
 
 var messages = [];
 
-var requestHandler = function(request, response) {
+var requestHandler = function (request, response) {
   var headers = defaultCorsHeaders;
   var statusCode = 200;
   headers['Content-Type'] = 'application/json';
@@ -33,35 +33,46 @@ var requestHandler = function(request, response) {
   // Documentation for both request and response can be found in the HTTP section at
   // http://nodejs.org/documentation/api/
   //console.log(messages);
+  //We are the server, in 'get' we are sending(posting)
   if (request.method === 'GET' && request.url === '/classes/messages') {
     response.writeHead(statusCode, headers);
     //debugger;
     response.end(JSON.stringify(messages));
   }
+  //in 'post', we are receiving(getting)
   if (request.method === 'POST' && request.url === '/classes/messages') {
     let body = '';
     //we are receiving chunks
     request.on('data', (chunk) => {
       body += chunk.toString();
-      //console.log(chunk);
+      //console.log('request body:' , body);
     });
-    request.on('end', ()=> {
+    request.on('end', () => {
       if (body) {
         const message = JSON.parse(body);
+        //after all chunks received, we add to our storage
         messages.push(message);
         response.writeHead(201, headers);
-        response.end('message was received');
+        response.end(JSON.stringify(messages));
       } else {
         //error message if no input
         response.writeHead(400, headers);
         response.end('no message was received');
       }
     });
+
   }
-  // Do some basic logging.
-  // Adding more logging to your server can be an easy way to get passive
-  // debugging help, but you should always be careful about leaving stray
-  // console.logs in your code.
+  //invalid destination
+  if (request.url !== '/classes/messages') {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end('Error 404');
+  }
+  // what else can be done
+  if (request.method === 'OPTIONS') {
+    response.writeHead(200, headers);
+    response.end('Options');
+  }
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
   // The outgoing status.
